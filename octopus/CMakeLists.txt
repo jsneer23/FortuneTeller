@@ -20,9 +20,15 @@ add_executable(${NAME}
 
 # Include Libraries
 include(drivers/button/button)
+include(drivers/analog/analog)
+include(drivers/analogmux/analogmux)
 include(libraries/servo2040/servo2040)
 
-target_link_libraries(${NAME} servo2040 button)
+target_link_libraries(${NAME} servo2040 
+    button 
+    analog 
+    analogmux
+    )
 
 # create map/bin/hex file etc.
 pico_add_extra_outputs(${NAME})
