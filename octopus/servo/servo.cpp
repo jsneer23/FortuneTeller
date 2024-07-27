@@ -1,5 +1,7 @@
-#include <cstdio>
+#include <stdio.h>
+#include <math.h>
 #include "pico/stdlib.h"
+#include "pico/multicore.h"
 
 #include "servo2040.hpp"
 #include "button.hpp"
@@ -9,94 +11,30 @@
 using namespace servo;
 using namespace plasma;
 
-// How many times to update Servos per second
-const uint UPDATES = 50;
-
-// The time to travel between each random value
-const uint TIME_FOR_EACH_MOVE = 2;
-const uint UPDATES_PER_MOVE = TIME_FOR_EACH_MOVE * UPDATES;
-
-// How far from zero to move the servo
-constexpr float SERVO_EXTENT = 130.0f;
-
-// Whether or not to use a cosine path between values
-const bool USE_COSINE = true;
-
-// The brightness of the LEDs
-constexpr float BRIGHTNESS = 0.4f;
-
-// The maximum current, in amps, to show on the meter
-constexpr float MAX_CURRENT = 2.1f;
-
-// The number of current measurements to take per reading
-const uint SAMPLES = 50;
-
-// The time between each current measurement
-const uint TIME_BETWEEN_MS = 1;
-
-// Set up the shared analog inputs
-Analog cur_adc = Analog(servo2040::SHARED_ADC, servo2040::CURRENT_GAIN,
-                        servo2040::SHUNT_RESISTOR, servo2040::CURRENT_OFFSET);
-
-// Set up the analog multiplexer, including the pin for controlling pull-up/pull-down
-AnalogMux mux = AnalogMux(servo2040::ADC_ADDR_0, servo2040::ADC_ADDR_1, servo2040::ADC_ADDR_2,
-                          PIN_UNUSED, servo2040::SHARED_ADC);
-
-// Create the LED bar, using PIO 1 and State Machine 0
-WS2812 led_bar(servo2040::NUM_LEDS, pio1, 0, servo2040::LED_DATA);
-
-// Create the user button
+// Create the user button for termination
 Button user_sw = Button(servo2040::USER_SW);
 
+void core1_current_sensing() {
 
-int main() {
-    stdio_init_all();
-    
-    // Create a servo object calibrated to goBilda servos
-    Calibration go_bilda = Calibration();
-    go_bilda.apply_two_pairs(500, 2500, -150, 150);
-    Servo s = Servo(servo2040::SERVO_1, go_bilda);
+    constexpr float BRIGHTNESS = 0.1f;      // led brightness
+    constexpr float MAX_CURRENT = 3.0f;       // max  current in amps shown on meter
+    const uint SAMPLES = 50;                // current measurements to take per reading
+    const uint TIME_BETWEEN_MS = 1;         // time between each current measurement
 
-    // Initialise the servo and led bar
-    s.init();
+    // Initialize the led
+    WS2812 led_bar(servo2040::NUM_LEDS, pio1, 0, servo2040::LED_DATA);
+
+    // Set up the shared analog inputs
+    Analog cur_adc = Analog(servo2040::SHARED_ADC, servo2040::CURRENT_GAIN,
+                        servo2040::SHUNT_RESISTOR, servo2040::CURRENT_OFFSET);
+
+    // Set up the analog multiplexer, including the pin for controlling pull-up/pull-down
+    AnalogMux mux = AnalogMux(servo2040::ADC_ADDR_0, servo2040::ADC_ADDR_1, servo2040::ADC_ADDR_2,
+                          PIN_UNUSED, servo2040::SHARED_ADC);
+
     led_bar.start();
 
-    // Get the initial value and create a random end value between the extents
-    float start_value = s.mid_value();
-    float end_value = (((float)rand() / (float)RAND_MAX) * (SERVO_EXTENT * 2.0f)) - SERVO_EXTENT;
-
-    uint update = 0;
-
-    // Continually move the servo until the user button is pressed
-    while(!user_sw.raw()) {
-
-        // Calculate how far along this movement to be
-        float percent_along = (float)update / (float)UPDATES_PER_MOVE;
-
-        if(USE_COSINE) {
-            // Move the servo between values using cosine
-            s.to_percent(cos(percent_along * (float)M_PI), 1.0, -1.0, start_value, end_value);
-        }
-        else {
-            // Move the servo linearly between values
-            s.to_percent(percent_along, 0.0, 1.0, start_value, end_value);
-        }
-
-        // Print out the value the servo is now at
-        printf("Value = %f\n", s.value());
-
-        // Move along in time
-        update++;
-
-        // Have we reached the end of this movement?
-        if(update >= UPDATES_PER_MOVE) {
-            // Reset the counter
-            update = 0;
-
-            // Set the start as the last end and create a new random end value
-            start_value = end_value;
-            end_value = (((float)rand() / (float)RAND_MAX) * (SERVO_EXTENT * 2.0f)) - SERVO_EXTENT;
-        }
+    while (!user_sw.raw()) {
 
         // Select the current sense
         mux.select(servo2040::CURRENT_SENSE_ADDR);
@@ -108,9 +46,6 @@ int main() {
             sleep_ms(TIME_BETWEEN_MS);
         }
         current /= SAMPLES;
-
-        // Print out the current sense value
-        printf("Current = %f\n", current);
 
         // Convert the current to a percentage of the maximum we want to show
         float percent = (current / MAX_CURRENT);
@@ -130,13 +65,58 @@ int main() {
                 led_bar.set_hsv(i, hue, 1.0f, 0.0f);
             }
         }
+    }
+
+    led_bar.clear();
+}
+
+
+int main() {
+
+    const uint UPDATES = 50;                            // number of servo updates per second
+    const uint START_PIN = servo2040::SERVO_1;          // first servo in cluster
+    const uint END_PIN = servo2040::SERVO_8;            // last servo in cluster
+    const uint NUM_SERVOS = (END_PIN - START_PIN) + 1;  // number of servos in cluster
+    
+    stdio_init_all();
+
+    // Initialize the servos
+    Calibration go_bilda = Calibration();               // create calibration object
+    go_bilda.apply_two_pairs(500, 2500, -150, 150);     // set info for goBilda servos
+    ServoCluster servos = ServoCluster(pio0, 0, START_PIN, NUM_SERVOS, go_bilda);   //init
+    servos.init();
+
+    // generate thread for current sensing
+    multicore_reset_core1();
+    multicore_launch_core1(core1_current_sensing);
+
+    // wave constants
+    const uint SPEED = 5;
+    constexpr float SERVO_EXTENT = 30.0f;
+    float offset = 0.0f;
+
+    // Continually move the servo until the user button is pressed
+    while(!user_sw.raw()) {
+
+        offset += (float)SPEED / 1000.0f;
+
+        // Update all the Servos
+        for(auto i = 0u; i < servos.count(); i++) {
+            float angle = (((float)i / (float)servos.count()) + offset) * ((float)M_TWOPI);
+            servos.value(i, sin(angle) * SERVO_EXTENT, false);
+        }
+        // We have now set all the servo values, so load them
+        servos.load();
 
         sleep_ms(1000 / UPDATES);
     }
 
-    // Disable the servo and turn off the LED bar
-    s.disable();
-    led_bar.clear();
+    // set servos to middle
+    servos.all_to_mid();
+    sleep_ms(1000);
+
+    // Disable the servo
+    servos.disable_all();
 
     // Sleep a short time so the clear takes effect
     sleep_ms(100);

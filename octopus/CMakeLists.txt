@@ -6,12 +6,10 @@ set(NAME octopus)
 include(pico_sdk_import.cmake)
 include(pimoroni_pico_import.cmake)
 
-# Gooey boilerplate
+
 project(${NAME} C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
-
-# Initialize the SDK
 pico_sdk_init()
 
 add_executable(${NAME}
@@ -24,7 +22,10 @@ include(drivers/analog/analog)
 include(drivers/analogmux/analogmux)
 include(libraries/servo2040/servo2040)
 
-target_link_libraries(${NAME} servo2040 
+target_link_libraries(${NAME} 
+    pico_stdlib
+    pico_multicore
+    servo2040 
     button 
     analog 
     analogmux

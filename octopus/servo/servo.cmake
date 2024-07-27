@@ -3,6 +3,7 @@ add_executable(${OUTPUT_NAME} servo.cpp)
 
 target_link_libraries(${OUTPUT_NAME}
         pico_stdlib
+        pico_multicore
         servo2040
         analogmux
         analog
