@@ -3,7 +3,7 @@
 ### Initialization Procedures
 
 1. somewhere in git directory run `git submodule update --init --recursive`
-2. set the path to the pico-sdk `export PICO_SDK_PATH=/workspaces/FortuneTeller/pico-sdk` (or local path if not workspace)
+2. set the path to the pico-sdk `export PICO_SDK_PATH=/workspaces/FortuneTeller/octopus/pico-sdk` (or local path if not workspace)
 3. install the toolchain using `sudo apt update` then `sudo apt upgrade` and finally `sudo apt install cmake gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential`
 
 ### Compile and Flashing Procedures
