@@ -25,7 +25,7 @@
 2. activate venv ```source /path/to/FortuneTeller/vision/venv/bin/activate```
 3. install packages in requirements.txt ```pip install -r path/to/FortuneTeller/requirements.txt```
 
-note that the requirements.txt includes opencv-python-headless which is not strictly necessary but is useful for codespaces or other environments which might not have dependencies installed. when using such environments you should separately ensure the venv created above is the python interpreter in use.
+note that the requirements.txt includes opencv-python-headless which is not strictly necessary but is useful for codespaces or other environments which might not have necessary dependencies installed. when using such environments you should separately ensure the venv created above is the python interpreter in use.
 
 ### facial recognition workflow procedures
 

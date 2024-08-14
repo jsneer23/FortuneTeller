@@ -1,6 +1,6 @@
 import os
-os.environ['OPENBLAS_NUM_THREADS'] = '1'
-os.environ['OPENBLAS_MAIN_FREE'] = '1'
+#os.environ['OPENBLAS_NUM_THREADS'] = '1'
+#os.environ['OPENBLAS_MAIN_FREE'] = '1'
 import cv2
 import numpy as np
 
@@ -42,8 +42,12 @@ def prepare_training_data(data_folder_path):
     return faces, labels
 
 read_path = os.path.join(os.getcwd(), "vision/training-data")
+write_path = os.path.join(os.getcwd(), "vision/trained-models")
+write_filename = "LBPHrecognizer"
+
 faces, labels = prepare_training_data(read_path)
 face_recognizer = cv2.face.LBPHFaceRecognizer.create()
 face_recognizer.train(faces, np.array(labels))
+face_recognizer.write(write_path + "/" + write_filename)
 
 
