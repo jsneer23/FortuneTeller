@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <math.h>
+#include <vector>
 #include "pico/stdlib.h"
 #include "pico/multicore.h"
 
@@ -17,8 +18,8 @@ Button user_sw = Button(servo2040::USER_SW);
 void core1_current_sensing() {
 
     constexpr float BRIGHTNESS = 0.1f;      // led brightness
-    constexpr float MAX_CURRENT = 3.0f;       // max  current in amps shown on meter
-    const uint SAMPLES = 50;                // current measurements to take per reading
+    constexpr float MAX_CURRENT = 10.0f;       // max  current in amps shown on meter
+    const uint SAMPLES = 50;                                                              // current measurements to take per reading
     const uint TIME_BETWEEN_MS = 1;         // time between each current measurement
 
     // Initialize the led
@@ -70,12 +71,53 @@ void core1_current_sensing() {
     led_bar.clear();
 }
 
+void start_and_end(ServoCluster& servos) {
+
+    // start and end position
+    servos.value(0, 0, false);
+    servos.value(1, -45, false);
+    servos.value(2, 0, false);
+    servos.value(3, -60, false);
+    servos.load();
+
+}
+
+std::vector<std::vector<double>> generate_path(const std::vector<int>& start, const std::vector<int>& end, int num_steps){
+
+    std::vector<double> step_size;
+    std::vector<double> curr;
+    std::vector<std::vector<double>> result;
+
+    for(int i = 0; i < 4; i++){
+        double temp = (double(end[i]) - double(start[i])) / double(num_steps);
+        step_size.push_back(temp);
+        curr.push_back(double(start[i]));
+    }
+
+    for(int i = 0; i <= num_steps; i++){
+        std::vector<double> copy;
+
+        for(auto& item : curr) {
+            copy.push_back(item);
+        }
+
+        result.push_back(copy);
+
+        for(int j = 0; j < 4; j++) {
+            curr[j] += step_size[j];
+        }
+    }
+
+    return result;
+
+}
+
 
 int main() {
 
     const uint UPDATES = 50;                            // number of servo updates per second
     const uint START_PIN = servo2040::SERVO_1;          // first servo in cluster
-    const uint END_PIN = servo2040::SERVO_8;            // last servo in cluster
+    const uint END_PIN = servo2040::SERVO_4;            // last servo in cluster
     const uint NUM_SERVOS = (END_PIN - START_PIN) + 1;  // number of servos in cluster
     
     stdio_init_all();
@@ -84,36 +126,39 @@ int main() {
     Calibration go_bilda = Calibration();               // create calibration object
     go_bilda.apply_two_pairs(500, 2500, -150, 150);     // set info for goBilda servos
     ServoCluster servos = ServoCluster(pio0, 0, START_PIN, NUM_SERVOS, go_bilda);   //init
-    servos.init();
 
     // generate thread for current sensing
     multicore_reset_core1();
     multicore_launch_core1(core1_current_sensing);
 
-    // wave constants
-    const uint SPEED = 5;
-    constexpr float SERVO_EXTENT = 30.0f;
-    float offset = 0.0f;
+    // Enable all servos (this puts them at the middle)
+    servos.init();
 
-    // Continually move the servo until the user button is pressed
-    while(!user_sw.raw()) {
+    start_and_end(servos);
+    sleep_ms(2000);
 
-        offset += (float)SPEED / 1000.0f;
+    std::vector<int> start {    0, -45,   0, -60};
+    std::vector<int> end   { -120, 20, -15, -60};
+    std::vector<std::vector<double>> poses = generate_path(start, end, 100);
 
-        // Update all the Servos
-        for(auto i = 0u; i < servos.count(); i++) {
-            float angle = (((float)i / (float)servos.count()) + offset) * ((float)M_TWOPI);
-            servos.value(i, sin(angle) * SERVO_EXTENT, false);
+    int speed = 60;
+
+    for(auto& pose : poses) {
+        for(int i = 0; i < 4; i++){
+            servos.value(i, pose[i], false);
         }
-        // We have now set all the servo values, so load them
         servos.load();
+        sleep_ms(1000/speed);
 
-        sleep_ms(1000 / UPDATES);
     }
 
-    // set servos to middle
+    sleep_ms(2000);
+
+    start_and_end(servos);
+    sleep_ms(2000);
+
     servos.all_to_mid();
-    sleep_ms(1000);
+    sleep_ms(2000);
 
     // Disable the servo
     servos.disable_all();
