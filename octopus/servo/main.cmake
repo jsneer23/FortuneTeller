@@ -1,8 +1,8 @@
-set(OUTPUT_NAME servo)
-add_executable(${OUTPUT_NAME} servo.cpp)
+set(OUTPUT_NAME main)
+add_executable(${OUTPUT_NAME} servo.cpp main.cpp)
 
 target_link_libraries(${OUTPUT_NAME}
-        pico_stdlib
+        # pico_stdlib
         pico_multicore
         servo2040
         analogmux
