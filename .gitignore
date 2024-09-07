@@ -1,41 +1,43 @@
-# Prerequisites
+# prerequisites
 *.d
 
-# Compiled Object files
+# compiled object files
 *.slo
 *.lo
 *.o
 *.obj
 
-# Precompiled Headers
+# precompiled headers
 *.gch
 *.pch
 
-# Compiled Dynamic libraries
+# compiled dynamic libraries
 *.so
 *.dylib
 *.dll
 
-# Fortran module files
+# fortran module files
 *.mod
 *.smod
 
-# Compiled Static libraries
+# compiled static libraries
 *.lai
 *.la
 *.a
 *.lib
 
-# Executables
+# Executables and build folder
 *.exe
 *.out
 *.app
-
 **/build
-.vscode
 
-# Apple filesystem cruft
+# vscode and clangd
+.vscode
+.cache
+
+# apple filesystem
 .DS_Store
 
-# Python venv folder
+# python venv folder
 .venv

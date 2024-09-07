@@ -1,45 +1,8 @@
 #include "servo.hpp"
-
+#include "motion.hpp"
+#include "pose.hpp"
 #include "servo2040.hpp"
-
-Pose Pose::operator+(const Pose& other) const {
-
-        return Pose{ first_left_right + other.first_left_right,
-                     first_up_down + other.first_up_down,
-                     second_left_right + other.second_left_right,
-                     second_up_down + other.second_up_down};
-    } 
-
-Pose Pose::operator-(const Pose& other) const {
-
-    return Pose{ first_left_right - other.first_left_right,
-                    first_up_down - other.first_up_down,
-                    second_left_right - other.second_left_right,
-                    second_up_down - other.second_up_down};
-}
-
-Pose Pose::operator*(double scalar) const {
-
-    return Pose{ first_left_right * scalar,
-                    first_up_down * scalar,
-                    second_left_right * scalar,
-                    second_up_down * scalar};
-}
-
-Pose Pose::operator/(double scalar) const {
-
-    return (*this) * (1.0 / scalar);
-}
-
-Pose& Pose::operator+=(const Pose& other) {
-
-    first_left_right += other.first_left_right;
-    first_up_down += other.first_up_down;
-    second_left_right += other.second_left_right;
-    second_up_down += other.second_up_down;
-
-    return *this;
-}
+#include <vector>
 
 servo::ServoCluster Servos::init_cluster(){
 
@@ -50,16 +13,7 @@ servo::ServoCluster Servos::init_cluster(){
     servo::Calibration calibration;
     calibration.apply_two_pairs(500, 2500, -150, 150);
     
-    return servo::ServoCluster(pio0, 0, START_PIN, NUM_SERVOS, calibration);
-}
-
-Servos::Servos(const Pose& start_position) : servos(init_cluster()) {
-
-    servos.init();
-    //to_mid();
-    servos.enable_all();
-    set_position(start_position);
-    //sleep_ms(1000);
+    return {pio0, 0, START_PIN, NUM_SERVOS, calibration};
 }
 
 void Servos::set_position(const Pose& next_position) {
@@ -73,14 +27,31 @@ void Servos::set_position(const Pose& next_position) {
     servos.load();
 }
 
+Servos::Servos(const Pose& position) : servos(init_cluster()), start_and_end(position) {
+
+    servos.init();
+    servos.enable_all();
+    set_position(start_and_end);
+    sleep_ms(200);
+}
+
+void Servos::move(const Motion& motion){
+
+    for(int i = 0; i <= motion.size(); i++) {
+        set_position(motion.at(i));
+        sleep_ms(motion.wait_ms());
+    }
+
+}
+
 void Servos::to_mid() {
-    servos.all_to_mid();
+    //servos.all_to_mid();
 }
 
 Servos::~Servos() {
 
-    to_mid();
-
-    servos.disable_all();
-    sleep_ms(100);
+    //set_position(start_and_end);
+    //sleep_ms(1000);
+    //servos.disable_all(false);
+    //sleep_ms(1000);
 }

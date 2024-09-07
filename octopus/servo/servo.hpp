@@ -1,33 +1,27 @@
 #pragma once
 
+#include "motion.hpp"
+#include "pose.hpp"
 #include "servo2040.hpp"
-
-struct Pose {
-
-    double first_left_right = 0;
-    double first_up_down = 0;
-    double second_left_right = 0;
-    double second_up_down = 0;
-
-    Pose operator+(const Pose& other) const;
-    Pose operator-(const Pose& other) const;
-    Pose operator*(double scalar) const;
-    Pose operator/(double scalar) const;
-    Pose& operator+=(const Pose& other);
-
-};
+//#include <vector>
 
 class Servos {
 
     private:
         servo::ServoCluster servos;
-        servo::ServoCluster init_cluster();
+        Pose start_and_end;
+        static servo::ServoCluster init_cluster();
+        void set_position(const Pose& next_position);
 
     public:
 
-        Servos(const Pose& start_position);
+        Servos(const Pose& start_position); //constructor
+        Servos(const Servos& other) = default; //copy constructor 
+        Servos(Servos&& other) = default; //move constructor
+        Servos& operator=(const Servos& other) = default; //copy assignment
+        Servos& operator=(Servos&& other) = default; //move assignment
 
-        void set_position(const Pose& next_position);
+        void move(const Motion& motion);
         void to_mid();
 
         ~Servos();

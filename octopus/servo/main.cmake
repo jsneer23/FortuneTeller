@@ -1,5 +1,5 @@
 set(OUTPUT_NAME main)
-add_executable(${OUTPUT_NAME} servo.cpp main.cpp)
+add_executable(${OUTPUT_NAME} servo.cpp pose.cpp motion.cpp main.cpp)
 
 target_link_libraries(${OUTPUT_NAME}
         # pico_stdlib

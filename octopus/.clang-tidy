@@ -1,0 +1,17 @@
+Checks: >         
+    clang-diagnostic-*,
+    clang-analyzer-*,
+    cppcoreguidelines-*,
+        -cppcoreguidelines-avoid-magic-numbers,
+    modernize-*,
+        -modernize-use-trailing-return-type,
+    bugprone-*,
+        -bugprone-easily-swappable-parameters,
+    performance-*,
+    readability-*,
+        -readability-identifier-length,
+        -readability-function-cognitive-complexity,
+        -readability-function-size,
+        -readability-magic-numbers,
+        
+WarningsAsErrors: true

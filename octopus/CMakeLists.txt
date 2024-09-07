@@ -10,11 +10,14 @@ include(pimoroni_pico_import.cmake)
 project(${NAME} C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 pico_sdk_init()
 
 add_executable(${NAME}
     servo/main.cpp
     servo/servo.cpp
+    servo/pose.cpp
+    servo/motion.cpp
 )
 
 # Include Libraries
