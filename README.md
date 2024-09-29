@@ -1,6 +1,12 @@
 # FortuneTeller
 
-## Servo control for octopus tentacles using Pimoroni servo2040
+this is a work in progress repository for a fortune telling machine that i'm building from scratch. this version uses the pimoroni servo2040 (i later decided to switch to the pimoroni yukon to add functionality) and also includes so basic facial recognition code so the maching can hand out person specific cards for a later add on.
+
+see the yukon octopus repository for the latest code.
+
+## getting started using the pimoroni servo2040
+
+this section includes instructions for getting the build environment for the servo2040 up and running
 
 ### pimoroni servo2040 initialization procedures
 
@@ -17,7 +23,9 @@
 3. now use ```make``` to build application and generate uf2 file
 3. boot rp2040 in boot/user mode and flash with octopus.uf2 by dragging into RPI-RP2 folder
 
-## Facial recognition for distributing fortune cards
+## getting started with facial recognition
+
+this section includes instructions for getting 
 
 ### opencv initialization procedures
 
@@ -32,7 +40,7 @@ note that the requirements.txt includes opencv-python-headless which is not stri
 1. place short videos of friends (i.e. live photos) in the training-videos folder
 2. run generate-data.py to generate training-data for the opencv facial recognition to use
 3. train the algorithm in train-faces.py on the training data
-4. ???
-5. profit
+4. (unimplemented) write code to see if live photo of machine operator is in database
+5. (unimplemented) eject card paired to that user or random card otherwise
 
 
